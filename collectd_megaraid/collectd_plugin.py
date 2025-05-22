@@ -12,10 +12,10 @@ class Config:
 
     def set(self, key, values):
         if key == 'verbose':
-            self.verbose = (vals[0].lower() == 'true')
+            self.verbose = (values[0].lower() == 'true')
             return True
         if key == 'storclipath':
-            self.fetcher.storcli_bin = vals[0]
+            self.fetcher.storcli_bin = values[0]
             return True
         return False
 
@@ -44,6 +44,7 @@ def read():
         collectd.info("{} plugin : error reading disks info {}".format(PLUGIN_NAME, e))
     
 def configure(conf):
+    print(conf)
     for node in conf.children:
         vals = [str(v) for v in node.values]
         key = node.key.lower()
@@ -51,6 +52,6 @@ def configure(conf):
             raise ValueError('%s plugin: Unknown config key: %s' % (PLUGIN_NAME, node.key))
     log_verbose('configured')
 
-collectd.register_config(configure)
+collectd.register_config(configure, name=PLUGIN_NAME)
 collectd.register_read(read)
 

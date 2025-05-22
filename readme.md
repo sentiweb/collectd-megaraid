@@ -26,7 +26,7 @@ LoadPlugin python
     LogTraces true
     Interactive false
     Import "collectd_megaraid.collectd_plugin"
-   <Module collectd_plugin>
+   <Module megaraid>
      Verbose True
      # StorCliPath "/path/to/storcli/bin"
    </Module>
