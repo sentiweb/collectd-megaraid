@@ -44,6 +44,9 @@ class StateMetrics:
         self.states = {}
         self.count = 0
         self.instance = instance
+
+    def to_dict(self):
+        return {"states": self.states, "count": self.count, "instance": self.instance}
     
     def add_state(self, state):
         prev = self.states.get(state, 0)
@@ -61,7 +64,10 @@ class MetricCollector(Collector):
     def __init__(self):
         self.virtuals = {}
         self.drives = {}
-    
+
+    def to_dict(self):
+        return {"drives": self.drives, "virtuals": self.virtuals}
+        
     def add_virtual_drive(self, c_id, data):
         state = data["State"]
         if not c_id in self.virtuals:
