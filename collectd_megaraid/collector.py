@@ -31,6 +31,9 @@ VD_ACCESS = {
 
 
 class Collector:
+    """
+        Abstract collector
+    """
 
     def add_virtual_drive(self, c_id, data):
         pass
@@ -40,14 +43,30 @@ class Collector:
 
 class StateMetrics:
 
-    def __init__(self, instance):
+    def __init__(self, instance, kind):
+        """
+            instance: instance of the state (reference drive/virtual drive)
+            kind: kind of state (drive/virtual)
+        """
         self.states = {}
         self.count = 0
         self.instance = instance
+        self.kind = kind
 
     def to_dict(self):
         return {"states": self.states, "count": self.count, "instance": self.instance}
-    
+
+    def to_metrics(self, rows):
+        """
+            Collect metrics in Prometheus metrics format
+        """
+        name = "megaraid_{}_state".format(self.kind)
+        rows.append('')
+        for state, count in self.states.items():
+            rows.append('# TYPE {} gauge')
+            row = "{}{state=\"{}\",{}=\"{}\"} {}".format(name, state, self.kind, self.instance, count) 
+            rows.append(row)
+
     def add_state(self, state):
         prev = self.states.get(state, 0)
         self.states[state] = prev + 1
@@ -67,11 +86,18 @@ class MetricCollector(Collector):
 
     def to_dict(self):
         return {"drives": self.drives, "virtuals": self.virtuals}
-        
+
+    def to_metrics(self):
+        rows = []
+        for _, d in self.virtuals.items():
+            d.to_metrics(rows)
+        for _, d in self.drives.items():
+            d.to_metrics(rows)
+        return rows
     def add_virtual_drive(self, c_id, data):
         state = data["State"]
-        if not c_id in self.virtuals:
-            self.virtuals[c_id] = StateMetrics(c_id)
+        if c_id not in self.virtuals:
+            self.virtuals[c_id] = StateMetrics(c_id, 'virtual_drive')
         m = self.virtuals[c_id]
         if state in VD_STATES:
             state = VD_STATES[state]
@@ -81,8 +107,8 @@ class MetricCollector(Collector):
         state = data["State"]
         dg = data["DG"]
         id = "c{}_d{}".format(c_id, dg)
-        if not id in self.drives:
-            self.drives[id] = StateMetrics(id)
+        if id not in self.drives:
+            self.drives[id] = StateMetrics(id, 'physical_drive')
         m = self.drives[id]
         if state in PD_STATES:
             state = PD_STATES.get(state)
